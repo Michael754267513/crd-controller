@@ -1,0 +1,9 @@
+apiVersion: apps.zenghao.com/v1
+kind: Handpay
+metadata:
+  name: handpay-sample
+spec:
+  # Add fields here
+  image: nginx
+  replicas: 2
+  foo: bar

@@ -1,0 +1,7 @@
+domain: zenghao.com
+repo: crd-controller
+resources:
+- group: apps
+  kind: Handpay
+  version: v1
+version: "2"

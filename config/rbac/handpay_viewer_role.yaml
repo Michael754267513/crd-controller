@@ -1,0 +1,20 @@
+# permissions for end users to view handpays.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: handpay-viewer-role
+rules:
+- apiGroups:
+  - apps.zenghao.com
+  resources:
+  - handpays
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps.zenghao.com
+  resources:
+  - handpays/status
+  verbs:
+  - get
