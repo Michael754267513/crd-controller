@@ -67,6 +67,16 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Finalizer 意异步删除数据
 	myFinalizerName := "zenghao.handpay.com.cn"
 	if meta.ObjectMeta.DeletionTimestamp.IsZero() {
+		// 添加OwnerReferences
+		if meta.ObjectMeta.OwnerReferences == nil {
+			log.Info("添加OwnerReferences")
+			meta.ObjectMeta.OwnerReferences = getOwnerReferences(meta)
+			if err = r.Update(ctx, meta); err != nil {
+				log.Info("更新OwnerReferences错误")
+				goto ERROR
+			}
+		}
+		// 添加Finalizer
 		if !containsString(meta.ObjectMeta.Finalizers, myFinalizerName) {
 			meta.ObjectMeta.Finalizers = append(meta.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), meta); err != nil {
@@ -86,13 +96,21 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	// 判断是否是新建或者更新
 	if meta.ObjectMeta.DeletionTimestamp.IsZero() {
-		log.Info("创建deployment")
+		log.Info("Kind 新建")
 		// 创建或者更新 deployment
+		log.Info("获取deployment")
 		deployment := logic.ServiceMetaLogic(meta.Spec)
-		if err := ctrl.SetControllerReference(deployment, meta, r.Scheme); err != nil {
-			goto ERROR
+		if deployment.ObjectMeta.OwnerReferences == nil {
+			//关联OwnerReferences
+			log.Info("关联OwnerReferences 当kind删除的时候 关联的资源也会自动删除")
+			if err = ctrl.SetControllerReference(meta, deployment, r.Scheme); err != nil {
+				log.Info("关联错误")
+				goto ERROR
+			}
 		}
-
+		//r.Update(ctx,meta)
+		// 创建deployment
+		log.Info("新建Deployment")
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, deployment, func() error {
 			return nil
 		}); err != nil {
@@ -101,12 +119,9 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, nil
 	}
 
-	// 判断是否删除
+	// 判断kind是否删除
 	if meta.ObjectMeta.DeletionTimestamp != nil {
-		log.Info("删除deployment")
-		if err = r.Delete(ctx, logic.ServiceMetaLogic(meta.Spec)); err != nil {
-			goto ERROR
-		}
+		log.Info("删除kind")
 	}
 ERROR:
 	return ctrl.Result{}, err
@@ -140,6 +155,7 @@ func containsString(slice []string, s string) bool {
 	}
 	return false
 }
+
 func removeString(slice []string, s string) (result []string) {
 	for _, item := range slice {
 		if item == s {
@@ -149,6 +165,7 @@ func removeString(slice []string, s string) (result []string) {
 	}
 	return
 }
+
 func (r *HandpayReconciler) deleteExternalResources(META *appsv1.Handpay) error {
 	//
 	// delete any external resources associated with the cronJob
@@ -156,4 +173,18 @@ func (r *HandpayReconciler) deleteExternalResources(META *appsv1.Handpay) error 
 	// Ensure that delete implementation is idempotent and safe to invoke
 	// multiple types for same object.
 	return nil
+}
+
+func getOwnerReferences(meta *appsv1.Handpay) []metav1.OwnerReference {
+	ownerRefs := []metav1.OwnerReference{}
+	ownerRef := metav1.OwnerReference{}
+	var k8sGC bool = true
+	ownerRef.APIVersion = meta.APIVersion
+	ownerRef.Name = meta.Name
+	ownerRef.Kind = meta.Kind
+	ownerRef.UID = meta.UID
+	ownerRef.Controller = &k8sGC
+	ownerRef.BlockOwnerDeletion = &k8sGC
+	return append(ownerRefs, ownerRef)
+
 }

@@ -5,7 +5,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func GetLables(meta v1.HandpaySpec) map[string]string {
@@ -52,9 +51,6 @@ func ServiceMetaLogic(meta v1.HandpaySpec) *appsv1.Deployment {
 				},
 			},
 		},
-	}
-	if err := ctrl.SetControllerReference(deployment, s, r.Scheme); err != nil {
-		return nil, err
 	}
 
 	return deployment
