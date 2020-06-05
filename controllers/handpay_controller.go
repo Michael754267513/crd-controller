@@ -52,6 +52,7 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 		控制器逻辑处理段，根据r.Get r.List r.Create r.Update r.Delete 对资源的增删改查（传送进来的资源进行逻辑处理）
 	*/
+	var err error
 	// 逻辑处理段
 	ctx := context.Background()
 	_ = r.Log.WithValues("handpay", req.NamespacedName)
@@ -69,17 +70,17 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		if !containsString(meta.ObjectMeta.Finalizers, myFinalizerName) {
 			meta.ObjectMeta.Finalizers = append(meta.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), meta); err != nil {
-				return ctrl.Result{}, err
+				goto ERROR
 			}
 		}
 	} else {
 		if containsString(meta.ObjectMeta.Finalizers, myFinalizerName) {
 			if err := r.deleteExternalResources(meta); err != nil {
-				return ctrl.Result{}, err
+				goto ERROR
 			}
 			meta.ObjectMeta.Finalizers = removeString(meta.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), meta); err != nil {
-				return ctrl.Result{}, err
+				goto ERROR
 			}
 		}
 	}
@@ -87,10 +88,15 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if meta.ObjectMeta.DeletionTimestamp.IsZero() {
 		log.Info("创建deployment")
 		// 创建或者更新 deployment
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, logic.ServiceMetaLogic(meta.Spec), func() error {
+		deployment := logic.ServiceMetaLogic(meta.Spec)
+		if err := ctrl.SetControllerReference(deployment, meta, r.Scheme); err != nil {
+			goto ERROR
+		}
+
+		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, deployment, func() error {
 			return nil
 		}); err != nil {
-			return ctrl.Result{}, nil
+			goto ERROR
 		}
 		return ctrl.Result{}, nil
 	}
@@ -98,12 +104,12 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// 判断是否删除
 	if meta.ObjectMeta.DeletionTimestamp != nil {
 		log.Info("删除deployment")
-		if err := r.Delete(ctx, logic.ServiceMetaLogic(meta.Spec)); err != nil {
-			return ctrl.Result{}, err
+		if err = r.Delete(ctx, logic.ServiceMetaLogic(meta.Spec)); err != nil {
+			goto ERROR
 		}
 	}
-
-	return ctrl.Result{}, nil
+ERROR:
+	return ctrl.Result{}, err
 }
 
 func (r *HandpayReconciler) SetupWithManager(mgr ctrl.Manager) error {
