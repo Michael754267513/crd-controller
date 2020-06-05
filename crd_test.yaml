@@ -3,5 +3,10 @@ kind: Handpay
 metadata:
   name: test1
 spec:
-  replicas: 2
-  image: www.zenghao.com/it/test1:v1
+  project: risk-account
+  env: account1
+  image: nginx
+  port: 80
+  serviceName: nginx1
+  owner: hzeng
+

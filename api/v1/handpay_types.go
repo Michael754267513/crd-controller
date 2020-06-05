@@ -30,8 +30,12 @@ type HandpaySpec struct {
 
 	// Foo is an example field of Handpay. Edit Handpay_types.go to remove/update
 	// 添加 所需要的yaml 变量
-	Image    string `json:"image,omitempty"` // json 解析 filed名用image
-	Replicas int    `json:"replicas,omitempty"`
+	Project     string `json:"project,omitempty"`
+	Env         string `json:"env,omitempty"`
+	Owner       string `json:"owner,omitempty"`
+	ServiceName string `json:"serviceName,omitempty"`
+	Image       string `json:"image"`
+	Port        int32  `json:"port"`
 }
 
 // HandpayStatus defines the observed state of Handpay
@@ -42,6 +46,7 @@ type HandpayStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Handpay is the Schema for the handpays API
 type Handpay struct {
@@ -52,7 +57,6 @@ type Handpay struct {
 	Status HandpayStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
 
 // HandpayList contains a list of Handpay
