@@ -17,11 +17,13 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	appsv1 "crd-controller/api/v1"
 	"crd-controller/controllers/logic"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/log"
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,7 +66,7 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		return ctrl.Result{}, nil
 	}
-	// Finalizer 意异步删除数据
+	// Finalizer 异步删除数据
 	myFinalizerName := "zenghao.handpay.com.cn"
 	if meta.ObjectMeta.DeletionTimestamp.IsZero() {
 		// 添加OwnerReferences
@@ -96,32 +98,48 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	// 判断是否是新建或者更新
 	if meta.ObjectMeta.DeletionTimestamp.IsZero() {
-		log.Info("Kind 新建")
+		log.Info("Kind 新建或者更新")
 		// 创建或者更新 deployment
-		log.Info("获取deployment")
+		log.Info("获取deployment资源")
 		deployment := logic.ServiceMetaLogic(meta.Spec)
 		if deployment.ObjectMeta.OwnerReferences == nil {
 			//关联OwnerReferences
 			log.Info("关联OwnerReferences 当kind删除的时候 关联的资源也会自动删除")
 			if err = ctrl.SetControllerReference(meta, deployment, r.Scheme); err != nil {
-				log.Info("关联错误")
+				log.Info("关联OwnerReferences错误")
 				goto ERROR
 			}
 		}
-		//r.Update(ctx,meta)
-		// 创建deployment
-		log.Info("新建Deployment")
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, deployment, func() error {
-			return nil
-		}); err != nil {
+		isExist := &v1.Deployment{}
+		key, err := client.ObjectKeyFromObject(deployment)
+		if err != nil {
 			goto ERROR
+		}
+		if err = r.Get(ctx, key, isExist); err != nil {
+			if errors.IsNotFound(err) {
+				log.Info("新建资源")
+				if _, err := ctrl.CreateOrUpdate(ctx, r.Client, deployment, func() error {
+					return nil
+				}); err != nil {
+					log.Info("新建资源失败")
+					goto ERROR
+				}
+				return reconcile.Result{}, nil
+			}
+		}
+		if !reflect.DeepEqual(deployment.Spec, isExist.Spec) {
+			isExist.Spec = deployment.Spec
+			log.Info("资源更新")
+			if err = r.Update(context.TODO(), isExist); err != nil {
+				goto ERROR
+			}
 		}
 		return ctrl.Result{}, nil
 	}
 
 	// 判断kind是否删除
 	if meta.ObjectMeta.DeletionTimestamp != nil {
-		log.Info("删除kind")
+		log.Info("资源删除: ", req.Name)
 	}
 ERROR:
 	return ctrl.Result{}, err
