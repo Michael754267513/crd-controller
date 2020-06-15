@@ -16,9 +16,26 @@ func GetLables(meta v1.HandpaySpec) map[string]string {
 	return lables
 }
 
+func AddEnvString(name string, value string) apiv1.EnvVar {
+	var env apiv1.EnvVar
+	env.Name = name
+	env.Value = value
+	return env
+}
+func AddPodNameEnv() apiv1.EnvVar {
+	var env apiv1.EnvVar
+	fieldref := apiv1.ObjectFieldSelector{}
+	fieldref.APIVersion = "v1"
+	fieldref.FieldPath = "metadata.name"
+	field := apiv1.EnvVarSource{FieldRef: &fieldref}
+	env.Name = "POD_NAME"
+	env.ValueFrom = &field
+	return env
+}
 func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment {
 	//测试环境所有公共服务副本数固定是1
 	var replicas int32 = 1
+	var env []apiv1.EnvVar
 	if meta.Replicas != 0 {
 		replicas = meta.Replicas
 	}
@@ -57,6 +74,11 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 			},
 		},
 	}
+	// 添加hosts解析
 	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
+	// 添加容器环境变量
+	env = append(env, AddEnvString("LANG", "en_US.UTF-8"))
+	env = append(env, AddPodNameEnv())
+	deployment.Spec.Template.Spec.Containers[0].Env = env
 	return deployment
 }
