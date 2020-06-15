@@ -58,6 +58,5 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 		},
 	}
 	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
-	log.Info(deployment)
 	return deployment
 }
