@@ -22,20 +22,42 @@ func AddEnvString(name string, value string) apiv1.EnvVar {
 	env.Value = value
 	return env
 }
-func AddPodNameEnv() apiv1.EnvVar {
+func AddPodNameEnv(name string, metaName string) apiv1.EnvVar {
 	var env apiv1.EnvVar
 	fieldref := apiv1.ObjectFieldSelector{}
 	fieldref.APIVersion = "v1"
-	fieldref.FieldPath = "metadata.name"
+	fieldref.FieldPath = "metadata." + metaName
 	field := apiv1.EnvVarSource{FieldRef: &fieldref}
-	env.Name = "POD_NAME"
+	env.Name = name
 	env.ValueFrom = &field
 	return env
+}
+func AddVolumeMount() apiv1.VolumeMount {
+	var (
+		volumeMount apiv1.VolumeMount
+	)
+	return volumeMount
+}
+func AddHostVolume(path string, name string) apiv1.Volume {
+	var (
+		volume               apiv1.Volume
+		volumeSource         apiv1.VolumeSource
+		hostPathVolumeSource apiv1.HostPathVolumeSource
+		hostType             apiv1.HostPathType
+	)
+	hostPathVolumeSource.Path = path
+	hostType = apiv1.HostPathType(apiv1.HostPathDirectoryOrCreate)
+	hostPathVolumeSource.Type = &hostType
+	volume.Name = name
+	volume.VolumeSource = volumeSource
+	return volume
 }
 func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment {
 	//测试环境所有公共服务副本数固定是1
 	var replicas int32 = 1
 	var env []apiv1.EnvVar
+	var volume []apiv1.Volume
+	var volumeMount []apiv1.VolumeMount
 	if meta.Replicas != 0 {
 		replicas = meta.Replicas
 	}
@@ -78,7 +100,12 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
 	// 添加容器环境变量
 	env = append(env, AddEnvString("LANG", "en_US.UTF-8"))
-	env = append(env, AddPodNameEnv())
+	env = append(env, AddPodNameEnv("POD_NAME", "name"))
+	env = append(env, AddPodNameEnv("POD_NAMESPACE", "namespace"))
 	deployment.Spec.Template.Spec.Containers[0].Env = env
+	// 处理容器日志持久化到node节点，默认日志路径 /logs
+	volume = append(volume, AddHostVolume("/opt/logs", "hostpath"))
+	deployment.Spec.Template.Spec.Volumes = volume
+	deployment.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMount
 	return deployment
 }
