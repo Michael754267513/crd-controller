@@ -1,4 +1,6 @@
-# crd-controller
+# 自定义控制器
+利用kubebuilder生成基础代码，用户只需要修改types定义参数文件和修改controller的逻辑代码实现块
+来进行快速的逻辑控制
 
 ### 使用 
 ```cassandraql
