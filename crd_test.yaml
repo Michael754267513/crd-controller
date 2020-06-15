@@ -9,4 +9,5 @@ spec:
   port: 80
   serviceName: nginx1
   owner: hzeng
+  hosts: [{"hostnames": ["www.baidu.com","www.michael.com"],"ip": "1.1.1.1"},{"hostnames":["databases1"],"ip": "192.168.2.1"}]
 

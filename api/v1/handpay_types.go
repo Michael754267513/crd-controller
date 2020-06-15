@@ -16,6 +16,7 @@ limitations under the License.
 package v1
 
 import (
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,12 +31,13 @@ type HandpaySpec struct {
 
 	// Foo is an example field of Handpay. Edit Handpay_types.go to remove/update
 	// 添加 所需要的yaml 变量
-	Project     string `json:"project,omitempty"`
-	Env         string `json:"env,omitempty"`
-	Owner       string `json:"owner,omitempty"`
-	ServiceName string `json:"serviceName,omitempty"`
-	Image       string `json:"image"`
-	Port        int32  `json:"port"`
+	Project     string            `json:"project,omitempty"`
+	Owner       string            `json:"owner,omitempty"`
+	ServiceName string            `json:"serviceName,omitempty"`
+	Image       string            `json:"image"`
+	Port        int32             `json:"port"`
+	Hosts       []apiv1.HostAlias `json:"hosts"`
+	Replicas    int32             `json:"replicas"`
 }
 
 // HandpayStatus defines the observed state of Handpay

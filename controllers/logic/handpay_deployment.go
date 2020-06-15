@@ -2,6 +2,7 @@ package logic
 
 import (
 	v1 "crd-controller/api/v1"
+	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,15 +16,19 @@ func GetLables(meta v1.HandpaySpec) map[string]string {
 	return lables
 }
 
-func ServiceMetaLogic(meta v1.HandpaySpec) *appsv1.Deployment {
+func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment {
 	//测试环境所有公共服务副本数固定是1
 	var replicas int32 = 1
+	if meta.Replicas != 0 {
+		replicas = meta.Replicas
+	}
+	log.Info("默认值：", meta.Replicas)
 	// 自定义lable标签
 	lables := GetLables(meta)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      meta.ServiceName,
-			Namespace: meta.Env,
+			Namespace: namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -52,6 +57,7 @@ func ServiceMetaLogic(meta v1.HandpaySpec) *appsv1.Deployment {
 			},
 		},
 	}
-
+	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
+	log.Info(deployment)
 	return deployment
 }

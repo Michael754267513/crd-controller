@@ -101,7 +101,7 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		log.Info("Kind 新建或者更新")
 		// 创建或者更新 deployment
 		log.Info("获取deployment资源")
-		deployment := logic.ServiceMetaLogic(meta.Spec)
+		deployment := logic.ServiceMetaLogic(meta.Spec, req.Namespace)
 		if deployment.ObjectMeta.OwnerReferences == nil {
 			//关联OwnerReferences
 			log.Info("关联OwnerReferences 当kind删除的时候 关联的资源也会自动删除")
