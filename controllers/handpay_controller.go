@@ -124,6 +124,12 @@ func (r *HandpayReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					log.Info("新建资源失败")
 					goto ERROR
 				}
+				// 标记 状态
+				meta.Status.Status = "Running"
+				if err := r.Update(ctx, meta); err != nil {
+					log.Error("状态更新失败")
+					log.Error(err)
+				}
 				return reconcile.Result{}, nil
 			}
 		}
