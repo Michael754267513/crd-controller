@@ -40,7 +40,7 @@ type HandpaySpec struct {
 	Replicas    int32             `json:"replicas"`
 	LogDir      string            `json:"logDir"`
 	NodeLogDir  string            `json:"nodeLogDir"`
-	NodeEnv     []apiv1.EnvVar    `json:"nodeEnv"`
+	PodEnv      []apiv1.EnvVar    `json:"nodeEnv"`
 }
 
 // HandpayStatus defines the observed state of Handpay

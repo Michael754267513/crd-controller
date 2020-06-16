@@ -109,7 +109,7 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 	// 添加hosts解析
 	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
 	// 添加容器环境变量
-	env = meta.NodeEnv
+	env = meta.PodEnv
 	env = append(env, AddEnvString("LANG", "en_US.UTF-8"))
 	env = append(env, AddPodNameEnv("POD_NAME", "name"))
 	env = append(env, AddPodNameEnv("POD_NAMESPACE", "namespace"))
