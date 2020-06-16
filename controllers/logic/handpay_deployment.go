@@ -22,6 +22,7 @@ func AddEnvString(name string, value string) apiv1.EnvVar {
 	env.Value = value
 	return env
 }
+
 func AddPodNameEnv(name string, metaName string) apiv1.EnvVar {
 	var env apiv1.EnvVar
 	fieldref := apiv1.ObjectFieldSelector{}
@@ -32,6 +33,7 @@ func AddPodNameEnv(name string, metaName string) apiv1.EnvVar {
 	env.ValueFrom = &field
 	return env
 }
+
 func AddVolumeMount(deploymentName string, logDir string) apiv1.VolumeMount {
 	var (
 		volumeMount apiv1.VolumeMount
@@ -41,6 +43,7 @@ func AddVolumeMount(deploymentName string, logDir string) apiv1.VolumeMount {
 	volumeMount.MountPath = logDir
 	return volumeMount
 }
+
 func AddHostVolume(path string, name string) apiv1.Volume {
 	var (
 		volume               apiv1.Volume
@@ -49,12 +52,14 @@ func AddHostVolume(path string, name string) apiv1.Volume {
 		hostType             apiv1.HostPathType
 	)
 	hostPathVolumeSource.Path = path
-	hostType = apiv1.HostPathType(apiv1.HostPathDirectoryOrCreate)
+	hostType = apiv1.HostPathDirectoryOrCreate
 	hostPathVolumeSource.Type = &hostType
+	volumeSource.HostPath = &hostPathVolumeSource
 	volume.Name = name
 	volume.VolumeSource = volumeSource
 	return volume
 }
+
 func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment {
 	//测试环境所有公共服务副本数固定是1
 	var replicas int32 = 1
