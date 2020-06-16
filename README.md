@@ -43,6 +43,9 @@ type HandpaySpec struct {
 	Port        int32             `json:"port"`
 	Hosts       []apiv1.HostAlias `json:"hosts"`
 	Replicas    int32             `json:"replicas"`
+	LogDir      string            `json:"logDir"`
+	NodeLogDir  string            `json:"nodeLogDir"`
+	PodEnv      []apiv1.EnvVar    `json:"podEnv"`
 }
 ```
 ### 逻辑实现代码段
