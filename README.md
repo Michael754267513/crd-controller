@@ -2,6 +2,19 @@
 利用kubebuilder生成基础代码，用户只需要修改types定义参数文件和修改controller的逻辑代码实现块
 来进行快速的逻辑控制
 
+###默认环境变量
+```cassandraql
+("LANG", "en_US.UTF-8")
+("POD_NAME", "name")
+("POD_NAMESPACE", "namespace")
+```
+### 应用日志存放路径
+```cassandraql
+默认存放宿主机日志目录： /opt/logs/{POD_NAMESPACE}/{POD_DEPLOYMENT}/{POD_NAME}
+容器应用日志目录：/logs
+可以使用参数进行调整： LogDir容器日志目录 NodeLogDir宿主机日志存放目录(/opt/logs/)
+```
+
 ### 使用 
 ```cassandraql
 kubecte apply -f crd.yaml
