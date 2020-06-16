@@ -38,6 +38,9 @@ type HandpaySpec struct {
 	Port        int32             `json:"port"`
 	Hosts       []apiv1.HostAlias `json:"hosts"`
 	Replicas    int32             `json:"replicas"`
+	LogDir      string            `json:"logDir"`
+	NodeLogDir  string            `json:"nodeLogDir"`
+	NodeEnv     []apiv1.EnvVar    `json:"nodeEnv"`
 }
 
 // HandpayStatus defines the observed state of Handpay

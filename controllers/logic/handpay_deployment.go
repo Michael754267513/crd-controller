@@ -32,10 +32,13 @@ func AddPodNameEnv(name string, metaName string) apiv1.EnvVar {
 	env.ValueFrom = &field
 	return env
 }
-func AddVolumeMount() apiv1.VolumeMount {
+func AddVolumeMount(deploymentName string, logDir string) apiv1.VolumeMount {
 	var (
 		volumeMount apiv1.VolumeMount
 	)
+	volumeMount.Name = "hostpath"
+	volumeMount.SubPathExpr = "$(POD_NAMESPACE)/" + deploymentName + "/$(POD_NAME)"
+	volumeMount.MountPath = logDir
 	return volumeMount
 }
 func AddHostVolume(path string, name string) apiv1.Volume {
@@ -58,8 +61,15 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 	var env []apiv1.EnvVar
 	var volume []apiv1.Volume
 	var volumeMount []apiv1.VolumeMount
+	// 判断值是否存在
 	if meta.Replicas != 0 {
 		replicas = meta.Replicas
+	}
+	if meta.LogDir == "" {
+		meta.LogDir = "/logs"
+	}
+	if meta.NodeLogDir == "" {
+		meta.NodeLogDir = "/opt/logs"
 	}
 	log.Info("默认值：", meta.Replicas)
 	// 自定义lable标签
@@ -99,12 +109,14 @@ func ServiceMetaLogic(meta v1.HandpaySpec, namespace string) *appsv1.Deployment 
 	// 添加hosts解析
 	deployment.Spec.Template.Spec.HostAliases = meta.Hosts
 	// 添加容器环境变量
+	env = meta.NodeEnv
 	env = append(env, AddEnvString("LANG", "en_US.UTF-8"))
 	env = append(env, AddPodNameEnv("POD_NAME", "name"))
 	env = append(env, AddPodNameEnv("POD_NAMESPACE", "namespace"))
 	deployment.Spec.Template.Spec.Containers[0].Env = env
-	// 处理容器日志持久化到node节点，默认日志路径 /logs
-	volume = append(volume, AddHostVolume("/opt/logs", "hostpath"))
+	// 处理容器日志持久化到node节点，默认日志路径 /logs node节点存放日志 ${meta.NodeLogDir} / namespace /deployment/ podname
+	volume = append(volume, AddHostVolume(meta.NodeLogDir, "hostpath"))
+	volumeMount = append(volumeMount, AddVolumeMount(meta.ServiceName, meta.LogDir))
 	deployment.Spec.Template.Spec.Volumes = volume
 	deployment.Spec.Template.Spec.Containers[0].VolumeMounts = volumeMount
 	return deployment
